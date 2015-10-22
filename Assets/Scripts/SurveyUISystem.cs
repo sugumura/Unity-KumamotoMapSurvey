@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
 using Kender.uGUI;
 using Parse;
 
@@ -14,6 +15,9 @@ public class SurveyUISystem : MonoBehaviour {
 
 	[SerializeField]
 	private GameObject alertPanel;
+
+	[SerializeField]
+	private GameObject errorPanel;
 
 
 	// first panel input
@@ -58,12 +62,14 @@ public class SurveyUISystem : MonoBehaviour {
 		firstPanel.SetActive(true);
 		secondPanel.SetActive(false);
 		alertPanel.SetActive(false);
+		errorPanel.SetActive(false);
 	}
 	
 	void ShowSecondPanel() {
 		firstPanel.SetActive(false);
 		secondPanel.SetActive(true);
 		alertPanel.SetActive(false);
+		errorPanel.SetActive(false);
 	}
 
 	void ShowAlert() {
@@ -74,8 +80,16 @@ public class SurveyUISystem : MonoBehaviour {
 		alertPanel.SetActive(false);
 	}
 
+	void ShowErrorAlert() {
+		errorPanel.SetActive(true);
+	}
 
-	bool CheckFirst() {
+	void HideErrorAlert() {
+		errorPanel.SetActive(false);
+	}
+
+
+	private bool CheckFirst() {
 		if (handleName.text.Length == 0) {
 			return false;
 		}
@@ -106,7 +120,7 @@ public class SurveyUISystem : MonoBehaviour {
 		return true;
 	}
 
-	bool CheckSecond() {
+	private bool CheckSecond() {
 		if (comment.text.Length == 0) {
 			return false;
 		}
@@ -119,7 +133,7 @@ public class SurveyUISystem : MonoBehaviour {
 	}
 
 	// TODO: save virtual map location
-	void SaveParse() {
+	private void SaveParse() {
 		Debug.Log("SaveParse");
 		ParseObject survey = new ParseObject("Survey");
 		survey["handleName"] = handleName.text;
@@ -132,10 +146,47 @@ public class SurveyUISystem : MonoBehaviour {
 		survey["comment"]    = comment.text;
 		survey["kind"]       = GetCaption(kind);
 
-		survey.SaveAsync();
+		survey.SaveAsync ().ContinueWith(task =>  {
+			
+			if (CheckTask("Save", task)){			
+				Debug.Log("ObjectId : " + survey.ObjectId);
+			} else {
+				// TODO: show alert call to main thread
+			}
+			
+		});
+		
 	}
 
-	string GetCaption (ComboBox box) {
+	// ref: https://gist.github.com/kankikuchi/d3b8e128ab8747c53430
+	private bool CheckTask(string taskName, System.Threading.Tasks.Task task){
+		if (task.IsCanceled)
+		{
+			Debug.Log(taskName + ": cancel");
+		}
+		else if (task.IsFaulted)
+		{
+			Debug.Log(taskName + ": fail");
+			
+			// error message
+			using (IEnumerator<System.Exception> enumerator = task.Exception.InnerExceptions.GetEnumerator()) {
+				if (enumerator.MoveNext()) {
+					ParseException error = (ParseException) enumerator.Current;
+					Debug.Log(error.Message);
+				}
+			}
+		}
+		else
+		{
+			Debug.Log(taskName + ": success");
+			return true;
+		}
+		
+		return false;
+	}
+	
+	
+	private string GetCaption (ComboBox box) {
 		return box.Items[box.SelectedIndex].Caption;
 	}
 	
@@ -165,7 +216,11 @@ public class SurveyUISystem : MonoBehaviour {
 		
 	}
 
-	public void Close() {
+	public void CloseAlert() {
 		HideAlert();
+	}
+
+	public void CloseError() {
+		HideErrorAlert();
 	}
 }
