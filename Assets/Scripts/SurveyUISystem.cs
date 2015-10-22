@@ -8,6 +8,7 @@ using Parse;
 
 public class SurveyUISystem : MonoBehaviour {	
 	public bool isShowError = false;
+	public bool isInit = false;
 	
 	[SerializeField]
 	private GameObject firstPanel;
@@ -65,8 +66,25 @@ public class SurveyUISystem : MonoBehaviour {
 			ShowErrorAlert();
 			this.isShowError = false;
 		}
+
+		if (this.isInit) {
+			InitPanels();
+			this.isInit = false;
+		}
 	}
 
+	void InitPanels() {
+		handleName.text = "";
+		old.SelectedIndex = 0;
+		sex.SelectedIndex = 0;
+		work.SelectedIndex = 0;
+		location.SelectedIndex = 0;
+		transfer.SelectedIndex = 0;
+		count.SelectedIndex = 0;
+		comment.text = "";
+		kind.SelectedIndex = 0;
+		ShowFirstPanel();
+	}
 
 	void ShowFirstPanel() {
 		firstPanel.SetActive(true);
@@ -167,6 +185,9 @@ public class SurveyUISystem : MonoBehaviour {
 							this.isShowError = true;
 						}
 					}
+				}
+				if (t.IsCompleted) {
+					this.isInit = true;
 				}
 			});
 		}
