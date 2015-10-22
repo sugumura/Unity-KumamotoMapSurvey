@@ -1,11 +1,13 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Kender.uGUI;
 using Parse;
 
 public class SurveyUISystem : MonoBehaviour {	
+	public bool isShowError = false;
 	
 	[SerializeField]
 	private GameObject firstPanel;
@@ -55,6 +57,13 @@ public class SurveyUISystem : MonoBehaviour {
 	void Start() {
 		Debug.Log("Start");
 		ShowFirstPanel();
+	}
+
+	void Update() {
+		if (this.isShowError) {
+			ShowErrorAlert();
+			this.isShowError = false;
+		}
 	}
 
 
@@ -146,45 +155,27 @@ public class SurveyUISystem : MonoBehaviour {
 		survey["comment"]    = comment.text;
 		survey["kind"]       = GetCaption(kind);
 
-		survey.SaveAsync ().ContinueWith(task =>  {
-			
-			if (CheckTask("Save", task)){			
-				Debug.Log("ObjectId : " + survey.ObjectId);
-			} else {
-				// TODO: show alert call to main thread
-			}
-			
-		});
-		
-	}
-
-	// ref: https://gist.github.com/kankikuchi/d3b8e128ab8747c53430
-	private bool CheckTask(string taskName, System.Threading.Tasks.Task task){
-		if (task.IsCanceled)
-		{
-			Debug.Log(taskName + ": cancel");
-		}
-		else if (task.IsFaulted)
-		{
-			Debug.Log(taskName + ": fail");
-			
-			// error message
-			using (IEnumerator<System.Exception> enumerator = task.Exception.InnerExceptions.GetEnumerator()) {
-				if (enumerator.MoveNext()) {
-					ParseException error = (ParseException) enumerator.Current;
-					Debug.Log(error.Message);
+		try {
+			survey.SaveAsync().ContinueWith(t =>  {
+				if (t.IsFaulted) {
+					// Errors from Parse Cloud and network interactions
+					using (IEnumerator<System.Exception> enumerator = t.Exception.InnerExceptions.GetEnumerator()) {
+						if (enumerator.MoveNext()) {
+							ParseException error = (ParseException) enumerator.Current;
+							Debug.Log(error.Message);
+							this.isShowError = true;
+						}
+					}
 				}
-			}
+			});
 		}
-		else
+		catch (Exception e)
 		{
-			Debug.Log(taskName + ": success");
-			return true;
+			Debug.Log(e.Message);
+			ShowErrorAlert();
 		}
 		
-		return false;
 	}
-	
 	
 	private string GetCaption (ComboBox box) {
 		return box.Items[box.SelectedIndex].Caption;
