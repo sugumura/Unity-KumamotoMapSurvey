@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using System.Collections;
 using Kender.uGUI;
+using Parse;
 
 public class SurveyUISystem : MonoBehaviour {	
 	
@@ -117,6 +118,26 @@ public class SurveyUISystem : MonoBehaviour {
 		return true;
 	}
 
+	// TODO: save virtual map location
+	void SaveParse() {
+		Debug.Log("SaveParse");
+		ParseObject survey = new ParseObject("Survey");
+		survey["handleName"] = handleName.text;
+		survey["old"]        = GetCaption(old);
+		survey["sex"]        = GetCaption(sex);
+		survey["work"]       = GetCaption(work);
+		survey["location"]   = GetCaption(location);
+		survey["transfer"]   = GetCaption(transfer);
+		survey["count"]      = GetCaption(count);
+		survey["comment"]    = comment.text;
+		survey["kind"]       = GetCaption(kind);
+
+		survey.SaveAsync();
+	}
+
+	string GetCaption (ComboBox box) {
+		return box.Items[box.SelectedIndex].Caption;
+	}
 	
 	public void Next() {
 		Debug.Log("Next");
@@ -137,7 +158,7 @@ public class SurveyUISystem : MonoBehaviour {
 		Debug.Log("Complete");
 
 		if (CheckSecond() == true) {
-			Debug.Log ("Req");
+			SaveParse();
 		} else {
 			ShowAlert();
 		}
