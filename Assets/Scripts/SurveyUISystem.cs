@@ -57,6 +57,7 @@ public class SurveyUISystem : MonoBehaviour {
 	void Start() {
 		Debug.Log("Start");
 		ShowFirstPanel();
+		handleName.ActivateInputField();
 	}
 
 	void Update() {
